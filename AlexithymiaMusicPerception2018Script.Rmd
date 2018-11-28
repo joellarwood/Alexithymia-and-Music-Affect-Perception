@@ -128,16 +128,21 @@ long.valence$condition <- mapvalues (long.valence$condition, from = c ("sad.vale
 
 arousal.glmm <- glmer(arousal ~ alexithymia*condition + (1|ID), data = long.arousal)
 
+summ(arousal.glmm)
+
 sim_slopes(model = arousal.glmm, pred = alexithymia, modx = condition, digits = 3)
 
 interact_plot(model = arousal.glmm, pred = alexithymia, modx = condition, interval = TRUE) + 
   theme_apa() + 
   geom_hline(yintercept = 0, linetype = "dotted") + labs (x = "Alexithymia", y = "Rated Arousal") 
+
 ```
 
 
 ```{r GLM valence}
 valence.glmm <- glmer(valence ~ alexithymia*condition + (1|ID), data = long.valence)
+
+summ (valence.glmm)
 
 sim_slopes(model = valence.glmm, pred = alexithymia, modx = condition, digits = 3) 
 
