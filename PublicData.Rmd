@@ -1,0 +1,31 @@
+---
+title: "Public data"
+output: html_notebook
+---
+
+```{r}
+xfun::pkg_attach2("readr")
+
+raw <- read_csv("~/Desktop/Data File Masters/Alexithymia Music Perception and LIWC.csv")
+
+names(raw)
+
+reduced <- raw %>% select(contains("ID"),
+                          contains("Finished"),
+                          contains("MUAR"),
+                          contains("MUVA"),
+                          contains("TAS"),
+                          contains("DASS"),
+                          contains("age"),
+                          contains("gender"),
+                          contains("Exp"),
+                          contains("play"),
+                          contains("Hours"),
+                          contains("Genre"),
+                          contains("WC"),
+                          contains("emo"),
+                          -contains("Page")) %>% drop_na("ProlificID") %>% filter(Finished == 1)
+
+write_csv(file = "~/Desktop/git/Alexithymia-and-Music-Affect-Perception/Data with Depression.csv")
+```
+

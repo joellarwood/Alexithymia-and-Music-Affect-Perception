@@ -1,0 +1,280 @@
+---
+title: "Alexithymia and Music perception GLMM: Cognition and Emotion Revise and Resubmit"
+output:
+  html_notebook: default
+  pdf_document: default
+---
+#Revise and Resubmit Analysis 
+
+Additional Analyses as requested 
+
+Note: Data was collected as part of a larger project which contained depression scores, these have been included upon reviewer comments highlighting need to control for mood. 
+
+```{r import and clean}
+xfun::pkg_attach2("tidyverse")
+setwd("/Users/joellarwood/Desktop/git/Negative Valence Specific Deficit in Music Affect Perception in Alexithymia")
+raw <- read_csv("data/Alexithymia Music Perception and LIWC.csv")
+
+names(raw)
+
+reduced <- raw %>% select(contains("ID"),
+                          contains("Finished"),
+                          contains("MUAR"),
+                          contains("MUVA"),
+                          contains("TAS"),
+                          contains("DASS"),
+                          contains("age"),
+                          contains("gender"),
+                          contains("Exp"),
+                          contains("play"),
+                          contains("Hours"),
+                          contains("Genre"),
+                          contains("WC"),
+                          contains("emo"),
+                          -contains("Page")) %>% drop_na("ProlificID") %>% filter(Finished == 1)
+
+names(reduced)
+#check na removed in prolific id
+
+sum(is.na(reduced$ProlificID))
+
+#ensure only complete data is present 
+
+table(reduced$Finished)
+
+#count p's
+nrow(reduced)
+
+#visualise missing data 
+xfun::pkg_attach2("naniar")
+
+reduced %>% select(contains("MUVA"),
+                   contains("MUAR"),
+                   contains("TAS"),
+                   contains("DASS")) %>% vis_miss()
+
+#no missing data 
+```
+create woring data frame 'cleanrr' for analysis 
+```{r}
+cleanrr <- reduced
+```
+
+#make lexicon counts 
+
+```{r lexicon}
+cleanrr$pos.lex.count <- ((cleanrr$posemo*cleanrr$WC)/100)
+#round 
+cleanrr$pos.lex.count <- round(cleanrr$pos.lex.count, digits = 0)
+
+cleanrr$neg.lex.count <- ((cleanrr$negemo*cleanrr$WC)/100)
+cleanrr$neg.lex.count <- round(cleanrr$neg.lex.count, digits = 0)
+
+cleanrr$emo.lex.count <- cleanrr$neg.lex.count + cleanrr$pos.lex.count
+
+xfun::pkg_attach2("psych")
+
+psych::describe(select(cleanrr, contains("count")))
+
+```
+
+#Get music scores 
+```{r music score creation}
+##--------Music Ratings
+#Sad Music 
+#Valence
+cleanrr$sad.valence <- (cleanrr$MUVA31_1 + cleanrr$MUVA109_1) / 2
+
+#AROUSAL 
+cleanrr$sad.arousal <- (cleanrr$MUAR31_1 + cleanrr$MUAR109_1) / 2
+
+#Angry music 
+#Valence 
+cleanrr$angry.valence <- (cleanrr$MUVA1_1 + cleanrr$MUVA69_1) / 2
+#AROUSAL
+cleanrr$angry.arousal <- (cleanrr$MUAR1_1 + cleanrr$MUAR69_1) / 2
+
+#Fear Music
+#VALENCE
+cleanrr$fear.valence <- (cleanrr$MUVA11_1 + cleanrr$MUVA14_1) / 2
+#AROUSAL
+cleanrr$fear.arousal <- (cleanrr$MUAR11_1 + cleanrr$MUAR14_1) / 2
+
+#Happy Music 
+#VALENCE
+cleanrr$happy.valence <- (cleanrr$MUVA23_1 + cleanrr$MUVA105_1) / 2 
+#AROUSAL
+cleanrr$happy.arousal = (cleanrr$MUAR23_1 + cleanrr$MUAR105_1) / 2
+
+
+#Tender music 
+#VALENCE
+cleanrr$tender.valence <- (cleanrr$MUVA41_1 + cleanrr$MUVA42_1) / 2 
+#AROUSAL
+cleanrr$tender.arousal <- (cleanrr$MUAR41_1 + cleanrr$MUAR42_1) / 2 
+```
+
+#describe songs
+```{r}
+cleanrr %>% select(contains("valence"),
+                   contains("arousal")) %>% psych::describe()
+```
+#Create scores 
+## Alexithymia and subscales 
+```{r alexithymia}
+##-------create alexithymia
+
+#Reverse scoring 
+cleanrr$TAS4_1r <- 6 - cleanrr$TAS4_1
+cleanrr$TAS5_1r <- 6 - cleanrr$TAS5_1
+cleanrr$TAS10_1r <- 6 - cleanrr$TAS10_1
+cleanrr$TAS18_1r <- 6 - cleanrr$TAS18_1
+cleanrr$TAS19_1r <- 6 - cleanrr$TAS19_1
+
+#psych::describe(clean$alexithymia)
+#Difficulty identifying feelings
+DIF <- c("TAS1_1", "TAS3_1", "TAS6_1", "TAS7_1", "TAS9_1", "TAS13_1", "TAS14_1")
+cleanrr %>% select(DIF) %>% alpha()
+cleanrr$DIF <- cleanrr %>%  select(DIF) %>% rowSums() 
+
+#Difficulty describing feelibgs 
+DDF <- c("TAS2_1", "TAS4_1r", "TAS11_1", "TAS12_1", "TAS17_1")
+cleanrr %>% select(DDF) %>% alpha()
+cleanrr$DDF <- cleanrr %>% select(DDF) %>% rowSums()
+
+#Externally oriented thinking
+EOT <- c("TAS5_1r", "TAS8_1", "TAS10_1r", "TAS15_1", "TAS16_1", "TAS18_1r", "TAS19_1r", "TAS20_1")
+cleanrr %>% select (EOT) %>% alpha()
+cleanrr$EOT <- cleanrr %>% select(EOT) %>% rowSums()
+
+#TAS total 
+cleanrr %>% select(DIF, DDF, EOT) %>% alpha()
+cleanrr$alexithymia <- cleanrr %>% select(DIF, DDF, EOT) %>% rowSums()
+
+#dichotomoize at 51 (> 51 is nonclinical) 
+xfun::pkg_attach2("sjmisc")
+cleanrr$clinicalalex <- dicho(cleanrr$alexithymia, dich.by = 50)
+cleanrr$clinicalalex<- factor(cleanrr$clinicalalex,
+                                 levels = c(0,1),
+                                 labels = c("below 51", "above 51"))
+#get descriptives
+
+cleanrr %>% select(alexithymia, DIF, DDF, EOT) %>% describe()
+table(cleanrr$clinicalalex)
+```
+
+#create DASS - depression subscale 
+```{r}
+D <- c("DASS3_1", "DASS10_1", "DASS13_1", "DASS16_1", "DASS17_1", "DASS21_1")
+cleanrr %>% select(D) %>% alpha()
+cleanrr$depression <- cleanrr %>% select(D) %>% rowSums()
+describe(cleanrr$depression)
+```
+#TOSTER analysis 
+```{r TOST}
+TOSTER::powerTOSTr(alpha = .05, statistical_power = .8, N = 162) #bounds = +/- .228
+```
+## All words
+```{r total tost}
+#total emotions
+TOSTER::TOSTr(n = 162, r = -.05, low_eqbound_r = -.228, high_eqbound_r = .228) 
+```
+## Positive words
+```{r positive tost}
+#positive emotions  
+TOSTER::TOSTr(n = 162, r = -.13, low_eqbound_r = -.228, high_eqbound_r = .228) 
+```
+## Negative words
+```{r negative tost}
+#negative emotions
+TOSTER::TOSTr(n = 162, r = .02, low_eqbound_r = -.228, high_eqbound_r = .228)  
+
+```
+
+#Reshape data to long
+```{r}
+#give easy ID 
+
+cleanrr$id <- (seq.int(nrow(cleanrr)))
+
+#arousal data
+rr.long.arousal <-  gather(data = cleanrr, key = condition, value = arousal, sad.arousal, happy.arousal, fear.arousal, tender.arousal, angry.arousal, factor_key=TRUE)
+rr.long.arousal <- rr.long.arousal %>% select(contains("ID"),
+                                        contains("alexithymia"),
+                                        contains("condition"),
+                                        contains("arousal"),
+                                        contains("depression"))
+xfun::pkg_attach2("plyr")
+
+rr.long.arousal$condition <- mapvalues (rr.long.arousal$condition, from = c ("sad.arousal", "happy.arousal", "fear.arousal", "tender.arousal", "angry.arousal"), to = c("Sad", "Happy", "Fearful", "Tender", "Angry"))
+
+#valence data
+rr.long.valence <- gather(data = cleanrr, key = condition, value = valence, sad.valence, happy.valence, fear.valence, tender.valence, angry.valence, factor_key=TRUE)
+rr.long.valence <- rr.long.valence %>% select(contains("ID"),
+                                        contains("alexithymia"),
+                                        contains("condition"),
+                                        contains("depression"),
+                                        contains("valence"))
+
+rr.long.valence$condition <- mapvalues (rr.long.valence$condition, from = c ("sad.valence", "happy.valence", "fear.valence", "tender.valence", "angry.valence"), to = c("Sad", "Happy", "Fearful", "Tender", "Angry"))
+```
+
+#GLMM 
+Build up from nothing 
+## Arousal data
+```{r arousal data}
+xfun::pkg_attach2("lme4")
+
+arousalnull <- glmer(arousal ~ 1 + (1|id), data = rr.long.arousal)
+arousaldep <- glmer(arousal ~ 1 + depression + (1|id), data = rr.long.arousal)
+arousaldepalex <- glmer(arousal ~ 1 + depression + alexithymia + (1|id), data = rr.long.arousal)
+arousaldepalexcond <- glmer(arousal ~ 1 + depression + alexithymia + condition + (1|id), data = rr.long.arousal)
+arousalinteract <- glmer(arousal ~ 1 + depression + alexithymia + condition + alexithymia*condition + (1|id), data = rr.long.arousal)
+arousal3interact <- glmer(arousal ~ 1 + depression + alexithymia + condition + alexithymia*condition + alexithymia*condition*depression + (1|id), data = rr.long.arousal)
+
+anova(arousalnull, arousaldep, arousaldepalex, arousaldepalexcond, arousalinteract, arousal3interact) 
+
+#interaction model is best fit 
+
+xfun::pkg_attach2("sjPlot")
+
+sjPlot::tab_model(arousalinteract)
+
+xfun::pkg_attach2("interactions")
+
+interactions::sim_slopes(model = arousalinteract, pred = alexithymia , modx = condition, confint = TRUE)
+
+xfun::pkg_attach2("jtools")
+
+interactions::interact_plot(model = arousalinteract, pred = alexithymia, modx = condition, interval = TRUE) + 
+  theme_apa() + 
+  geom_hline(yintercept = 0, linetype = "dotted") + labs (x = "Alexithymia", y = "Rated Arousal") 
+```
+
+## Valence data 
+```{r valence glmm}
+valencenull <- glmer(valence ~ 1 + (1|id), data = rr.long.valence)
+valencedep <- glmer(valence ~ 1 + depression + (1|id), data = rr.long.valence)
+valencedepalex <- glmer(valence ~ 1 + depression + alexithymia + (1|id), data = rr.long.valence)
+valencedepalexcond <- glmer(valence ~ 1 + depression + alexithymia + condition + (1|id), data = rr.long.valence)
+valenceinteract <- glmer(valence ~ 1 + depression + alexithymia + condition + alexithymia*condition + (1|id), data = rr.long.valence)
+valence3interact <- glmer(valence ~ 1 + depression + alexithymia + condition + alexithymia*condition + alexithymia*condition*depression + (1|id), data = rr.long.valence)
+
+anova(valencenull, valencedep, valencedepalex, valencedepalexcond, valenceinteract, valence3interact) 
+
+#interaction model is best fit 
+
+xfun::pkg_attach2("sjPlot")
+
+sjPlot::tab_model(valenceinteract)
+
+xfun::pkg_attach2("interactions")
+
+interactions::sim_slopes(model = valenceinteract, pred = alexithymia , modx = condition, confint = TRUE)
+
+xfun::pkg_attach2("jtools")
+
+interactions::interact_plot(model = valenceinteract, pred = alexithymia, modx = condition, interval = TRUE) + 
+  theme_apa() + 
+  geom_hline(yintercept = 0, linetype = "dotted") + labs (x = "Alexithymia", y = "Rated valence") 
+```
