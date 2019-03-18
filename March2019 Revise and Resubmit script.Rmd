@@ -8,35 +8,13 @@ output:
 
 Additional Analyses as requested 
 
+This script can be reproduced with data hosted on GitHub https://github.com/joellarwood/Alexithymia-and-Music-Affect-Perception/blob/master/Data%20with%20Depression.csv
+
 Note: Data was collected as part of a larger project which contained depression scores, these have been included upon reviewer comments highlighting need to control for mood. 
 
 ```{r import and clean}
 xfun::pkg_attach2("tidyverse")
-setwd("/Users/joellarwood/Desktop/git/Negative Valence Specific Deficit in Music Affect Perception in Alexithymia")
-raw <- read_csv("data/Alexithymia Music Perception and LIWC.csv")
-
-names(raw)
-
-reduced <- raw %>% select(contains("ID"),
-                          contains("Finished"),
-                          contains("MUAR"),
-                          contains("MUVA"),
-                          contains("TAS"),
-                          contains("DASS"),
-                          contains("age"),
-                          contains("gender"),
-                          contains("Exp"),
-                          contains("play"),
-                          contains("Hours"),
-                          contains("Genre"),
-                          contains("WC"),
-                          contains("emo"),
-                          -contains("Page")) %>% drop_na("ProlificID") %>% filter(Finished == 1)
-
-names(reduced)
-#check na removed in prolific id
-
-sum(is.na(reduced$ProlificID))
+reduced <- read_csv("https://raw.githubusercontent.com/joellarwood/Alexithymia-and-Music-Affect-Perception/master/Data%20with%20Depression.csv")
 
 #ensure only complete data is present 
 
