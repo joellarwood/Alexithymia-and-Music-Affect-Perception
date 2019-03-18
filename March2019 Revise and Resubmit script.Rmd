@@ -1,6 +1,8 @@
 ---
-title: "Alexithymia and Music perception GLMM: Cognition and Emotion Revise and Resubmit"
+title: 'Alexithymia and Music perception GLMM: Cognition and Emotion Revise and Resubmit'
 output:
+  html_document:
+    df_print: paged
   html_notebook: default
   pdf_document: default
 ---
@@ -256,3 +258,11 @@ interactions::interact_plot(model = valenceinteract, pred = alexithymia, modx = 
   theme_apa() + 
   geom_hline(yintercept = 0, linetype = "dotted") + labs (x = "Alexithymia", y = "Rated valence") 
 ```
+
+for github hosting
+
+```{r}
+file.copy(from = "/Users/joellarwood/Desktop/git/Alexithymia-and-Music-Affect-Perception/March2019 Revise and Resubmit script.nb.html", to = "/Users/joellarwood/Desktop/git/Alexithymia-and-Music-Affect-Perception/docs/March2019 Revise and Resubmit script.nb.html", overwrite = TRUE)
+```
+
+

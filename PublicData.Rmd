@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 ```{r}
-xfun::pkg_attach2("readr")
+xfun::pkg_attach2("tidyverse")
 
 raw <- read_csv("~/Desktop/Data File Masters/Alexithymia Music Perception and LIWC.csv")
 
@@ -26,6 +26,6 @@ reduced <- raw %>% select(contains("ID"),
                           contains("emo"),
                           -contains("Page")) %>% drop_na("ProlificID") %>% filter(Finished == 1)
 
-write_csv(file = "~/Desktop/git/Alexithymia-and-Music-Affect-Perception/Data with Depression.csv")
+write_csv(reduced, path = "~/Desktop/git/Alexithymia-and-Music-Affect-Perception/Data with Depression.csv")
 ```
 
